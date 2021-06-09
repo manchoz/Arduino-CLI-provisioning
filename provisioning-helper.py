@@ -430,7 +430,10 @@ if len(device_list) < 1:
     exit('No board attached/discovered')
 
 if args.device_port:
-    selected_board = [ d for d in device_list if d.address == args.device_port ][0]
+    boards_on_port = [ d for d in device_list if d.address == args.device_port ]
+    if (len(boards_on_port) < 1):
+        exit(f'No board attached to {args.device_port}')
+    selected_board = boards_on_port[0]
 else:
     selected_board = device_list[0]
 
