@@ -384,6 +384,40 @@ def upload_sketch(board, sketch_name):
         compiling_sketch.wait()
 
 
+def update_bootloader():
+    if (selected_board.fqbn == 'arduino:mbed_portenta:envie_m7'):
+        print("Updating the Bootloader")
+        upload_sketch(selected_board, "PortentaUpdateBootloader")
+        time.sleep(1)
+        print("Bootloader Updater loaded")
+        time.sleep(1)
+        serial_port = connect_to_board(selected_board)
+        print("Waiting for Bootloader Update to finish")
+        while(serial_port.in_waiting > 0):
+            line = serial_port.readline()
+            if (line == 'BOOTLOADER UPDATE DONE'):
+                break
+        print('Done.')
+        serial_port.close()
+
+
+def upgrade_wifi_and_partitions():
+    if (selected_board.fqbn == 'arduino:mbed_portenta:envie_m7'):
+        print("Updating the WiFi Firmware and Partitioning the Flash")
+        upload_sketch(selected_board, "PortentaWiFiFirmwareAndPartitions")
+        time.sleep(1)
+        print("WiFi Updater and Flash Partitioning loaded")
+        time.sleep(1)
+        serial_port = connect_to_board(selected_board)
+        print("Waiting for WiFi Updater and Flash Partitioning to finish")
+        while(serial_port.in_waiting > 0):
+            line = serial_port.readline()
+            if (line == 'WIFI UPDATE AND PARITIONING DONE'):
+                break
+        print('Done.')
+        serial_port.close()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Arduino IoT Cloud Crypto-Element Provisioning Assistant')
@@ -463,6 +497,11 @@ print(f"IoT Cloud generated Device ID: {device_id}")
 # input('any key to continue...')
 
 if not args.skip_sketches:
+    update_bootloader()
+    time.sleep(1)
+
+    upgrade_wifi_and_partitions()
+    time.sleep(1)
 
     sketch_unknown = True
     while(sketch_unknown):
