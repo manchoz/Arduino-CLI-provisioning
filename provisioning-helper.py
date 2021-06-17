@@ -287,15 +287,15 @@ def find_binary(fw_file_path):
         return False
 
 
-def upload_sketch(board):
+def upload_sketch(board, sketch_name):
     platform_id = board.fqbn.rpartition(':')[0]
-    binary_file_path = f'cryptoconfig_fw/{board.fqbn.replace(":", ".")}.bin'
+    binary_file_path = f'{sketch_name}/build/{board.fqbn.replace(":", ".")}/{sketch_name}.ino.bin'
     print(binary_file_path)
     if find_binary(binary_file_path):
-        print("Uploading pre-compiled ArduinoIoTCloud-CryptoConfig Sketch")
+        print(f'Uploading pre-compiled {sketch_name} Sketch')
         uploading_sketch = subprocess.Popen(["arduino-cli", "upload", "--input-file",
                                             binary_file_path, "-b",
-                                            board.fqbn, "-p", board.address],
+                                            board.fqbn, "-t", "-p", board.address],
                                             stdout=subprocess.PIPE)
         while True:
             output = uploading_sketch.stdout.readline().decode()
@@ -370,10 +370,10 @@ def upload_sketch(board):
 
         print()
 
-        print("Compiling and Uploading ArduinoIoTCloud-CryptoConfig Sketch")
+        print(f'Compiling and Uploading {sketch_name} Sketch')
         compiling_sketch = subprocess.Popen(["arduino-cli", "compile",
-                                            "ArduinoIoTCloud-CryptoConfig", "-b",
-                                             board.fqbn, "-u", "-p", board.address],
+                                            sketch_name, "-b",
+                                             board.fqbn, "-e", "-u", "-t", "-p", board.address],
                                             stdout=subprocess.PIPE)
         while True:
             output = compiling_sketch.stdout.readline().decode()
@@ -393,6 +393,8 @@ if __name__ == "__main__":
         '--device_name', help='Choose the name your device will have in your dashboard. Example: --device_name=myNanoIoT')
     parser.add_argument(
         '--device_port', help='Select the device you want provision via the the serial port. Example: --device_port=COM1')
+    parser.add_argument(
+        '--skip_sketches', help='Assume provisioning sketches already uploaded', action="store_true")
     args = parser.parse_args()
 
 if(args.api_credentials_file):
@@ -460,22 +462,25 @@ print(f"IoT Cloud generated Device ID: {device_id}")
 
 # input('any key to continue...')
 
-serial_port = connect_to_board(selected_board)
-time.sleep(1)
+if not args.skip_sketches:
 
-sketch_unknown = True
-while(sketch_unknown):
-    if(get_sketch_info() != (ERROR.SKETCH_UNKNOWN)):
-        print(f"Provisioning Sketch found on {selected_board.name}")
-        sketch_unknown = False
-        break
-    print("Provisioning Sketch not on board. Installation in progress...")
-    upload_sketch(selected_board)
-    time.sleep(1)
-    print("Provisioning Sketch uploaded")
-    time.sleep(1)
-    serial_port = connect_to_board(selected_board)
-    time.sleep(2)
+    sketch_unknown = True
+    while(sketch_unknown):
+        serial_port = connect_to_board(selected_board)
+        time.sleep(1)
+
+        if(get_sketch_info() != (ERROR.SKETCH_UNKNOWN)):
+            print(f"Provisioning Sketch found on {selected_board.name}")
+            sketch_unknown = False
+            break
+        print("Provisioning Sketch not on board. Installation in progress...")
+        upload_sketch(selected_board, "ArduinoIoTCloud-CryptoConfig")
+        time.sleep(1)
+        print("Provisioning Sketch uploaded")
+        time.sleep(1)
+
+serial_port = connect_to_board(selected_board)
+time.sleep(2)
 
 
 # send GET_CSR command (has payload > 0)
