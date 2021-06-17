@@ -6,6 +6,8 @@
 import requests
 import json
 
+from binascii import hexlify
+
 from serial.serialutil import SerialException
 # import serial.tools.list_ports
 import serial
@@ -138,7 +140,7 @@ def send_command(command, payload=bytearray([]), encode=False, verbose_message="
 
     if(parsed_response != ERROR.CRC_FAIL):
         print(f"{verbose_message}: OK")
-        print()
+        # print()
         return parsed_response
     else:
         print("data corrupted")
@@ -174,7 +176,7 @@ def add_device(token, device_name, fqbn, type, serial):
             }
     response = send_request(requests.Request(
         "PUT", url, headers=headers, data=data), print_request=False, print_response=False)
-    print(response)
+    # print(response)
     device_id = json.loads(response.text)['id']
     return device_id
 
@@ -214,7 +216,7 @@ def send_csr(token, csr, device_id):
     data = json.dumps(data_cert)
     # response = requests.put(url, headers=headers, data=json.dumps(data_cert))
     response = send_request(requests.Request(
-        "PUT", url=url, headers=headers, data=data), print_request=True, print_response=True)
+        "PUT", url=url, headers=headers, data=data), print_request=False, print_response=False)
     return json.loads(response.text)['compressed']
 
 
@@ -301,8 +303,8 @@ def upload_sketch(board, sketch_name):
             output = uploading_sketch.stdout.readline().decode()
             if output == '' and uploading_sketch.poll() is not None:
                 break
-            if output:
-                print(output.strip())
+            # if output:
+                # print(output.strip())
         uploading_sketch.wait()
     else:
         print(f"Installing {platform_id} core")
@@ -466,7 +468,7 @@ if len(device_list) < 1:
     exit('No board attached/discovered')
 
 if args.device_port:
-    boards_on_port = [ d for d in device_list if d.address == args.device_port ]
+    boards_on_port = [d for d in device_list if d.address == args.device_port]
     if (len(boards_on_port) < 1):
         exit(f'No board attached to {args.device_port}')
     selected_board = boards_on_port[0]
@@ -521,20 +523,13 @@ if not args.skip_sketches:
 serial_port = connect_to_board(selected_board)
 time.sleep(2)
 
-
 # send GET_CSR command (has payload > 0)
 # pass in the device_name as payload
 # ******* CHANGE TO THE DEVICE ID RETURNED BY THE API *********
 print(f"REQUESTING CSR for Device with ID: {device_id}")
 
-print(device_id)
-print(device_id.encode())
-print(bytearray(device_id.encode()))
-print(list(bytearray(device_id.encode())))
-
 csr = send_command(command=COMMAND.GET_CSR, payload=list(
     bytearray(device_id.encode())), encode=False, verbose_message="CSR Obtained")
-print(csr)
 
 if(csr != ERROR.CRC_FAIL):
     print("CSR received")
@@ -542,48 +537,48 @@ if(csr != ERROR.CRC_FAIL):
 else:
     print("CSR REQUEST FAILED. Data returned below:")
     print(csr)
-    exit()
+    exit(1)
 
 certificate = send_csr(token, csr, device_id)
-print(certificate)
+# print(certificate)
 
 print("Requesting Begin Storage")
 send_command(command=COMMAND.BEGIN_STORAGE,
              verbose_message="Crytpo Storage INIT OK")
 
 year = certificate['not_before'][:4]
-print(f"Sending Year: {year}")
+# print(f"Sending Year: {year}")
 send_command(COMMAND.SET_YEAR, year, True, "YEAR set")
 
 month = certificate['not_before'][5:7]
-print(f"Sending Month: {month}")
+# print(f"Sending Month: {month}")
 send_command(COMMAND.SET_MONTH, month, True, "MONTH set")
 
 day = certificate['not_before'][8:10]
-print(f"Sending Day: {day}")
+# print(f"Sending Day: {day}")
 send_command(COMMAND.SET_DAY, day, True, "DAY set")
 
 hour = certificate['not_before'][11:13]
-print(f"Sending Hour: {hour}")
+# print(f"Sending Hour: {hour}")
 send_command(COMMAND.SET_HOUR, hour, True, "HOUR set")
 
 years_validity = "31"
-print(f"Sending Validity (years): {years_validity}")
+# print(f"Sending Validity (years): {years_validity}")
 send_command(COMMAND.SET_VALIDITY, years_validity, True, "VALIDITY set")
 
 cert_serial = bytearray.fromhex(certificate['serial'])
-print(f"Sending Certificate Serial: {cert_serial}")
+# print(f"Sending Certificate Serial: {cert_serial}")
 send_command(COMMAND.SET_CERT_SERIAL, cert_serial, False, "Serial set")
 
 cert_authority_key_id = bytearray.fromhex(
     certificate['authority_key_identifier'])
-print(f"Sending Certificate Authority Key: {cert_authority_key_id}")
+print(f"Sending Certificate Authority Key: {hexlify(cert_authority_key_id).decode()}")
 send_command(COMMAND.SET_AUTH_KEY, cert_authority_key_id,
              False, "Authority Key ID set")
 
 signature = bytearray.fromhex(
     certificate['signature_asn1_x'] + certificate['signature_asn1_y'])
-print(f"Sending Signature: {signature}")
+print(f"Sending Signature: {hexlify(signature).decode()}")
 send_command(COMMAND.SET_SIGNATURE, signature, False, "Signature set")
 time.sleep(1)
 print("Requesting End Storage")
