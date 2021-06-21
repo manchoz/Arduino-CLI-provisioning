@@ -260,7 +260,7 @@ def connect_to_board(board):
             # serial_port_handler.close()
             sleep(1)
             serial_port_handler = serial.Serial(
-                board.address, 57600, write_timeout=5)
+                board.address, 115200, write_timeout=5)
             waiting_for_serial = False
         except SerialException as se:
             print(f"cannot connect to serial:\n{se}")
@@ -390,11 +390,18 @@ def update_bootloader():
         time.sleep(1)
         serial_port = connect_to_board(selected_board)
         print("Waiting for Bootloader Update to finish")
+        found = False
+        serial_port.readline()
         while(serial_port.in_waiting > 0):
             line = serial_port.readline()
-            if (line == 'BOOTLOADER UPDATE DONE'):
+            if (line == b'BOOTLOADER UPDATE DONE\r\n'):
+                found = True
                 break
-        print('Done.')
+        if found:
+            print('Done.')
+        else:
+            print('Error.')
+
         serial_port.close()
 
 
@@ -402,16 +409,21 @@ def upgrade_wifi_and_partitions():
     if (selected_board.fqbn == 'arduino:mbed_portenta:envie_m7'):
         print("Updating the WiFi Firmware and Partitioning the Flash")
         upload_sketch(selected_board, "PortentaWiFiFirmwareAndPartitions")
-        time.sleep(1)
         print("WiFi Updater and Flash Partitioning loaded")
         time.sleep(1)
         serial_port = connect_to_board(selected_board)
         print("Waiting for WiFi Updater and Flash Partitioning to finish")
+        found = False
+        serial_port.readline()
         while(serial_port.in_waiting > 0):
             line = serial_port.readline()
-            if (line == 'WIFI UPDATE AND PARITIONING DONE'):
+            if (line == b'WIFI UPDATE AND PARITIONING DONE\r\n'):
+                found = True
                 break
-        print('Done.')
+        if found:
+            print('Done.')
+        else:
+            print('Error.')
         serial_port.close()
 
 
@@ -447,9 +459,11 @@ if __name__ == "__main__":
             f"Failed to load Arduino IoT API Credentials JSON [{json_config_file}]\n")
         print("This file is supposed to be found in the user's home directory.")
         print("Alternatively it can be supplied as a parameter in the command.\n")
-        print("e.g.: python provisioning-helper.py --api_credentials_file PATH_TO_FILE.json\n")
+        print(
+            "e.g.: python provisioning-helper.py --api_credentials_file PATH_TO_FILE.json\n")
         print("You can rename the supplied ArduinoIoTCloudAPI_credentials-example.json")
-        print("to ArduinoIoTCloudAPI_credentials.json and use your generated API credentials")
+        print(
+            "to ArduinoIoTCloudAPI_credentials.json and use your generated API credentials")
         exit(1)
 
     if(args.device_name):
@@ -463,7 +477,8 @@ if __name__ == "__main__":
         exit('No board attached/discovered')
 
     if args.device_port:
-        boards_on_port = [d for d in device_list if d.address == args.device_port]
+        boards_on_port = [
+            d for d in device_list if d.address == args.device_port]
         if (len(boards_on_port) < 1):
             exit(f'No board attached to {args.device_port}')
         selected_board = boards_on_port[0]
@@ -472,7 +487,7 @@ if __name__ == "__main__":
 
     token = generate_token(client_id, secret_id)
     device_id = add_device(token, device_name, selected_board.fqbn,
-                        selected_board.type, selected_board.serial_number)
+                           selected_board.type, selected_board.serial_number)
     print(f"IoT Cloud generated Device ID: {device_id}")
 
     if not args.skip_sketches:
@@ -521,7 +536,7 @@ if __name__ == "__main__":
 
     print("Requesting Begin Storage")
     send_command(command=COMMAND.BEGIN_STORAGE,
-                verbose_message="Crytpo Storage INIT OK")
+                 verbose_message="Crytpo Storage INIT OK")
 
     year = certificate['not_before'][:4]
     # print(f"Sending Year: {year}")
@@ -552,7 +567,7 @@ if __name__ == "__main__":
     print(
         f"Sending Certificate Authority Key: {hexlify(cert_authority_key_id).decode()}")
     send_command(COMMAND.SET_AUTH_KEY, cert_authority_key_id,
-                False, "Authority Key ID set")
+                 False, "Authority Key ID set")
 
     signature = bytearray.fromhex(
         certificate['signature_asn1_x'] + certificate['signature_asn1_y'])
@@ -565,7 +580,7 @@ if __name__ == "__main__":
     time.sleep(2)
     print("Requesting Certificate Reconstruction")
     send_command(command=COMMAND.RECONSTRUCT_CERT,
-                verbose_message="Reconstrucing Certificate")
+                 verbose_message="Reconstrucing Certificate")
 
     print('Device provisioning successful')
     print(f'IoT Cloud Device Name: {device_name}')

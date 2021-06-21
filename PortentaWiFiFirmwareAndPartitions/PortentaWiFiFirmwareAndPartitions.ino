@@ -24,8 +24,16 @@ long getFileSize(FILE *fp) {
 
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(57600);
   while (!Serial);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  for (auto i = 0u; i < 10; i++) {
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(25);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(35);
+  }
 
   mbed::MBRBlockDevice::partition(&root, 1, 0x0B, 0, 1024 * 1024);
   mbed::MBRBlockDevice::partition(&root, 2, 0x0B, 1024 * 1024, 14 * 1024 * 1024);
