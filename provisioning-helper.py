@@ -391,12 +391,13 @@ def update_bootloader():
         serial_port = connect_to_board(selected_board)
         print("Waiting for Bootloader Update to finish")
         found = False
-        serial_port.readline()
-        while(serial_port.in_waiting > 0):
-            line = serial_port.readline()
-            if (line == b'BOOTLOADER UPDATE DONE\r\n'):
-                found = True
-                break
+        timeout = time.time() + 60
+        while (True and time.time() < timeout):
+            if (serial_port.in_waiting > 0):
+                line = serial_port.readline()
+                if (line == b'BOOTLOADER UPDATE DONE\r\n'):
+                    found = True
+                    break
         if found:
             print('Done.')
         else:
@@ -414,12 +415,13 @@ def upgrade_wifi_and_partitions():
         serial_port = connect_to_board(selected_board)
         print("Waiting for WiFi Updater and Flash Partitioning to finish")
         found = False
-        serial_port.readline()
-        while(serial_port.in_waiting > 0):
-            line = serial_port.readline()
-            if (line == b'WIFI UPDATE AND PARITIONING DONE\r\n'):
-                found = True
-                break
+        timeout = time.time() + 60
+        while (True and time.time() < timeout):
+            if (serial_port.in_waiting > 0):
+                line = serial_port.readline()
+                if (line == b'WIFI UPDATE AND PARITIONING DONE\r\n'):
+                    found = True
+                    break
         if found:
             print('Done.')
         else:
