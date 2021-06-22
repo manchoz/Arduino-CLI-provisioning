@@ -46,17 +46,21 @@ void setup() {
     Serial.println("No filesystem containing the WiFi firmware was found.");
     Serial.println("Usually that means that the WiFi firmware has not been installed yet"
                   " or was overwritten with another firmware.\n");
-    Serial.println("Formatting the filsystem to install the firmware and certificates...\n");
+    Serial.print("Formatting the filsystem to install the firmware and certificates... ");
     err = wifi_data_fs.reformat(&wifi_data);
+    Serial.println("Done.\n");
   }
 
   err =  ota_data_fs.mount(&ota_data);
   if (err) {
     // Reformat if we can't mount the filesystem
     // this should only happen on the first boot
-    Serial.println("No filesystem for OTA firmware was found, creating");
+    Serial.print("No filesystem for OTA firmware was found, creating... ");
     err = ota_data_fs.reformat(&ota_data);
+    Serial.println("Done.\n");
   }
+
+  Serial.print("Saving WiFi Firmware... ");
   extern const unsigned char wifi_firmware_image_data[];
   extern const resource_hnd_t wifi_firmware_image;
   FILE* fp = fopen("/wlan/4343WA1.BIN", "wb");
@@ -64,10 +68,13 @@ void setup() {
   fclose(fp);
 
   root.program(wifi_firmware_image_data, 15 * 1024 * 1024 + 1024 * 512, 421098);
+  Serial.println("done.");
 
+  Serial.print("Saving CACarte... ");
   fp = fopen("/wlan/cacert.pem", "wb");
   ret = fwrite(cacert_pem, cacert_pem_len, 1, fp);
   fclose(fp);
+  Serial.println("done.");
 
   fp = fopen("/wlan/cacert.pem", "rb");
   char buffer[128];
