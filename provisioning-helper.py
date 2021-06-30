@@ -512,6 +512,7 @@ if __name__ == "__main__":
             upload_sketch(selected_board, "ArduinoIoTCloud-CryptoConfig")
             time.sleep(1)
             print("Provisioning Sketch uploaded")
+            serial_port.close()
             time.sleep(1)
 
     serial_port = connect_to_board(selected_board)
