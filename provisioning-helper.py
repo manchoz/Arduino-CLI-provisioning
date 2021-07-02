@@ -507,6 +507,7 @@ if __name__ == "__main__":
             if(get_sketch_info() != (ERROR.SKETCH_UNKNOWN)):
                 print(f"Provisioning Sketch found on {selected_board.name}")
                 sketch_unknown = False
+                serial_port.close()
                 break
             print("Provisioning Sketch not on board. Installation in progress...")
             upload_sketch(selected_board, "ArduinoIoTCloud-CryptoConfig")
