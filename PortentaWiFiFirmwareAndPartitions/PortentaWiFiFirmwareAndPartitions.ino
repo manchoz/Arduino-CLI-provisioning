@@ -36,7 +36,7 @@ void setup() {
   }
 
   mbed::MBRBlockDevice::partition(&root, 1, 0x0B, 0, 1024 * 1024);
-  mbed::MBRBlockDevice::partition(&root, 2, 0x0B, 1024 * 1024, 14 * 1024 * 1024);
+  mbed::MBRBlockDevice::partition(&root, 2, 0x0B, 1024 * 1024, 8 * 1024 * 1024);
   // use space from 15.5MB to 16 MB for another fw, memory mapped
 
   int err =  wifi_data_fs.mount(&wifi_data);
