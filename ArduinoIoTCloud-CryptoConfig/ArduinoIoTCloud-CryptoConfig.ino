@@ -105,7 +105,8 @@ String signature;
 
 void setup() {
 
-  Serial.begin(57600);
+  Serial.begin(115200);
+  while(!Serial);
   Serial1.begin(115200);
   uint8_t cryptoInitOK = cryptoInit();
   if (!cryptoInit()) {
